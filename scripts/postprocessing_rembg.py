@@ -3,6 +3,8 @@ import gradio as gr
 
 from modules.ui_components import FormRow
 from modules.paths_internal import models_path
+from modules.system_monitor import monitor_call_context
+from modules.postprocessing import monitor_extras_params
 import rembg
 import os
 
@@ -41,6 +43,9 @@ class ScriptPostprocessingUpscale(scripts_postprocessing.ScriptPostprocessing):
                 outputs=[alpha_mask_row],
             )
 
+        monitor_extras_params(enable, "rembg_enabled")
+        monitor_extras_params(model, "rembg_model_selected", "(x) => !['', 'None'].includes(x)")
+
         return {
             "enable": enable,
             "model": model,
@@ -51,7 +56,7 @@ class ScriptPostprocessingUpscale(scripts_postprocessing.ScriptPostprocessing):
             "alpha_matting_erode_size": alpha_matting_erode_size,
         }
 
-    def process(self, pp: scripts_postprocessing.PostprocessedImage, enable, model, return_mask, alpha_matting, alpha_matting_foreground_threshold, alpha_matting_background_threshold, alpha_matting_erode_size):
+    def _process(self, pp: scripts_postprocessing.PostprocessedImage, enable, model, return_mask, alpha_matting, alpha_matting_foreground_threshold, alpha_matting_background_threshold, alpha_matting_erode_size):
         if not enable:
             return
 
@@ -72,3 +77,22 @@ class ScriptPostprocessingUpscale(scripts_postprocessing.ScriptPostprocessing):
         )
 
         pp.info["Rembg"] = model
+
+    def process(self, pp: scripts_postprocessing.PostprocessedImage, enable, model, return_mask, alpha_matting, alpha_matting_foreground_threshold, alpha_matting_background_threshold, alpha_matting_erode_size):
+        if not enable:
+            return
+
+        if not model or model == "None":
+            return
+
+        with monitor_call_context(
+            pp.get_request(),
+            "extensions.rembg",
+            "extensions.rembg",
+            decoded_params={
+                "width": pp.image.width,
+                "height": pp.image.height,
+            },
+        ):
+            return self._process(pp, enable, model, return_mask, alpha_matting, alpha_matting_foreground_threshold, alpha_matting_background_threshold, alpha_matting_erode_size)
+
