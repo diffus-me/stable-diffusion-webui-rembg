@@ -23,7 +23,7 @@ import rembg
 
 def rembg_api(_: gr.Blocks, app: FastAPI):
     @app.post("/rembg")
-    async def rembg_remove(
+    def rembg_remove(
         request: Request,
         task_id: str = Body(),
         input_image: str = Body("", title='rembg input image'),
