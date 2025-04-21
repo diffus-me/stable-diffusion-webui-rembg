@@ -4,7 +4,6 @@ import gradio as gr
 from modules.ui_components import FormRow
 from modules.paths_internal import models_path
 from modules.system_monitor import monitor_call_context
-from modules.postprocessing import monitor_extras_params
 import rembg
 import os
 
@@ -42,9 +41,6 @@ class ScriptPostprocessingUpscale(scripts_postprocessing.ScriptPostprocessing):
                 inputs=[alpha_matting],
                 outputs=[alpha_mask_row],
             )
-
-        monitor_extras_params(enable, "rembg_enabled")
-        monitor_extras_params(model, "rembg_model_selected", "(x) => !['', 'None'].includes(x)")
 
         return {
             "enable": enable,
